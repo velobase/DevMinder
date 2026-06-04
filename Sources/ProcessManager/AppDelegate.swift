@@ -87,10 +87,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             return
         }
 
-        button.image = MenuBarIcon.make(active: monitor.activeCount > 0)
+        button.image = MenuBarIcon.make(state: menuBarIconState)
         button.image?.accessibilityDescription = monitor.statusTitle
-        button.imagePosition = .imageLeading
-        button.title = " \(monitor.statusTitle)"
+        button.imagePosition = menuBarTitle.isEmpty ? .imageOnly : .imageLeading
+        button.title = menuBarTitle
+    }
+
+    private var menuBarIconState: MenuBarIcon.State {
+        if !monitor.monitoringEnabled {
+            return .paused
+        }
+
+        return monitor.activeCount > 0 ? .active : .idle
+    }
+
+    private var menuBarTitle: String {
+        guard monitor.monitoringEnabled else {
+            return ""
+        }
+
+        guard monitor.activeCount > 0 else {
+            return ""
+        }
+
+        return " \(monitor.activeCount)"
     }
 
     private func updateLocalizedChrome() {

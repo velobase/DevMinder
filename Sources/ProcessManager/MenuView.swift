@@ -445,14 +445,16 @@ private struct PortStatusRow: View {
             HStack(spacing: 10) {
                 StatusDot(color: rowColor)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(port.displayName)
+                HStack(alignment: .firstTextBaseline, spacing: 0) {
+                    Text(verbatim: port.displayName)
                         .font(.subheadline.weight(.semibold))
                         .lineLimit(1)
+                        .truncationMode(.tail)
 
-                    Text(":\(port.port)")
+                    Text(verbatim: ":\(port.port)")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
+                        .fixedSize()
                 }
 
                 Spacer()
@@ -486,6 +488,7 @@ private struct PortStatusRow: View {
                             trailing: process.displayTarget,
                             systemImage: process.isDockerContainer ? "shippingbox.fill" : "terminal",
                             canTerminate: process.canTerminate,
+                            actionMode: monitor.terminationButtonMode(for: process.terminationTarget),
                             terminateLabel: process.isDockerContainer ? monitor.t(.stopContainer) : monitor.t(.sendTerm),
                             forceTerminateLabel: process.isDockerContainer ? monitor.t(.killContainer) : monitor.t(.forceKill),
                             terminate: { monitor.terminate(process.terminationTarget) },
@@ -522,6 +525,10 @@ private struct RuleMatchRow: View {
     @EnvironmentObject private var monitor: ProcessMonitor
     let match: RuleProcessMatch
 
+    private var target: ProcessTerminationTarget {
+        .process(pid: match.process.pid)
+    }
+
     var body: some View {
         ProcessRow(
             title: match.process.displayName,
@@ -529,10 +536,11 @@ private struct RuleMatchRow: View {
             trailing: match.rules.joined(separator: ", "),
             systemImage: "terminal",
             canTerminate: true,
+            actionMode: monitor.terminationButtonMode(for: target),
             terminateLabel: monitor.t(.sendTerm),
             forceTerminateLabel: monitor.t(.forceKill),
-            terminate: { monitor.terminate(pid: match.process.pid) },
-            forceTerminate: { monitor.terminate(pid: match.process.pid, force: true) }
+            terminate: { monitor.terminate(target) },
+            forceTerminate: { monitor.terminate(target, force: true) }
         )
         .padding(11)
         .background(AppPalette.rowBackground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
@@ -550,10 +558,46 @@ private struct ProcessRow: View {
     let trailing: String
     let systemImage: String
     let canTerminate: Bool
+    let actionMode: ProcessTerminationButtonMode
     let terminateLabel: String
     let forceTerminateLabel: String
     let terminate: () -> Void
     let forceTerminate: () -> Void
+
+    private var buttonIcon: String {
+        switch actionMode {
+        case .graceful:
+            "xmark.circle.fill"
+        case .waiting:
+            "hourglass.circle.fill"
+        case .force:
+            "exclamationmark.octagon.fill"
+        }
+    }
+
+    private var buttonHelp: String {
+        guard canTerminate else {
+            return monitor.t(.dockerProxyProtected)
+        }
+
+        switch actionMode {
+        case .graceful:
+            return terminateLabel
+        case .waiting:
+            return monitor.t(.waitingForExit)
+        case .force:
+            return forceTerminateLabel
+        }
+    }
+
+    private var buttonColor: Color {
+        switch actionMode {
+        case .graceful, .force:
+            return .red
+        case .waiting:
+            return .secondary
+        }
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -586,23 +630,16 @@ private struct ProcessRow: View {
                     .textSelection(.enabled)
             }
 
-            Menu {
-                Button(terminateLabel, action: terminate)
-                    .disabled(!canTerminate)
-                Button(role: .destructive, action: forceTerminate) {
-                    Text(forceTerminateLabel)
-                }
-                .disabled(!canTerminate)
-            } label: {
-                Image(systemName: "xmark.circle.fill")
+            Button(action: actionMode == .force ? forceTerminate : terminate) {
+                Image(systemName: buttonIcon)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.red)
+                    .foregroundStyle(buttonColor)
                     .frame(width: 26, height: 26)
             }
-            .menuStyle(.borderlessButton)
-            .disabled(!canTerminate)
-            .opacity(canTerminate ? 1 : 0.42)
-            .help(canTerminate ? monitor.t(.terminateProcess) : monitor.t(.dockerProxyProtected))
+            .buttonStyle(.plain)
+            .disabled(!canTerminate || actionMode == .waiting)
+            .opacity((canTerminate && actionMode != .waiting) ? 1 : 0.42)
+            .help(buttonHelp)
         }
     }
 }

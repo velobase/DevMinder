@@ -24,6 +24,7 @@ enum L10nKey: Hashable {
     case collapseIdlePorts
     case sendTerm
     case forceKill
+    case waitingForExit
     case stopContainer
     case killContainer
     case dockerProxyProtected
@@ -133,6 +134,7 @@ enum L10n {
         .collapseIdlePorts: "点击收起空闲端口",
         .sendTerm: "发送 TERM",
         .forceKill: "强制 KILL",
+        .waitingForExit: "等待退出",
         .stopContainer: "停止容器",
         .killContainer: "强制停止容器",
         .dockerProxyProtected: "这是 Docker Desktop 端口代理，不能直接终止。",
@@ -184,6 +186,7 @@ enum L10n {
         .collapseIdlePorts: "Click to hide idle ports",
         .sendTerm: "Send TERM",
         .forceKill: "Force KILL",
+        .waitingForExit: "Waiting for exit",
         .stopContainer: "Stop container",
         .killContainer: "Kill container",
         .dockerProxyProtected: "This is a Docker Desktop port proxy and cannot be terminated directly.",

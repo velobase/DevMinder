@@ -2,6 +2,12 @@ import Foundation
 import ProcessManagerCore
 import SwiftUI
 
+enum ProcessTerminationButtonMode: Equatable {
+    case graceful
+    case waiting
+    case force
+}
+
 @MainActor
 final class ProcessMonitor: ObservableObject {
     @Published var ports: [PortWatch] {
@@ -48,6 +54,8 @@ final class ProcessMonitor: ObservableObject {
     @Published private(set) var statusMessage = ""
     @Published private(set) var isScanning = false
     @Published var errorMessage: String?
+    @Published private var pendingGracefulTargets: Set<String> = []
+    @Published private var forceReadyTargets: Set<String> = []
 
     private let scanner = ProcessScanner()
     private var timer: Timer?
@@ -152,6 +160,7 @@ final class ProcessMonitor: ObservableObject {
 
                 self.portProcesses = portProcesses
                 self.ruleMatches = ruleMatches
+                self.reconcileTerminationButtons(portProcesses: portProcesses, ruleMatches: ruleMatches)
                 self.lastScanDate = Date()
                 self.errorMessage = nil
                 self.isScanning = false
@@ -170,6 +179,15 @@ final class ProcessMonitor: ObservableObject {
 
     func terminate(_ target: ProcessTerminationTarget, force: Bool = false) {
         let scanner = scanner
+        let targetID = target.id
+
+        if force {
+            pendingGracefulTargets.remove(targetID)
+            forceReadyTargets.insert(targetID)
+        } else {
+            pendingGracefulTargets.insert(targetID)
+            forceReadyTargets.remove(targetID)
+        }
 
         Task {
             do {
@@ -183,6 +201,11 @@ final class ProcessMonitor: ObservableObject {
                     self?.scanNow()
                 }
             } catch {
+                pendingGracefulTargets.remove(targetID)
+                if target.canTerminate {
+                    forceReadyTargets.insert(targetID)
+                }
+
                 let message = L10n.terminateFailed(
                     target: target.displayLabel,
                     error: error.localizedDescription,
@@ -192,6 +215,18 @@ final class ProcessMonitor: ObservableObject {
                 setStatus(.terminateFailed(target: target.displayLabel, error: error.localizedDescription))
             }
         }
+    }
+
+    func terminationButtonMode(for target: ProcessTerminationTarget) -> ProcessTerminationButtonMode {
+        if pendingGracefulTargets.contains(target.id) {
+            return .waiting
+        }
+
+        if forceReadyTargets.contains(target.id) {
+            return .force
+        }
+
+        return .graceful
     }
 
     func addPort() {
@@ -224,6 +259,21 @@ final class ProcessMonitor: ObservableObject {
 
     func processes(for port: Int) -> [PortProcess] {
         portProcesses.filter { $0.port == port }
+    }
+
+    private func reconcileTerminationButtons(
+        portProcesses: [PortProcess],
+        ruleMatches: [RuleProcessMatch]
+    ) {
+        let activeTargetIDs = Set(
+            portProcesses.map(\.terminationTarget.id) + ruleMatches.map { "pid-\($0.process.pid)" }
+        )
+        let stillRunningAfterGracefulStop = pendingGracefulTargets.intersection(activeTargetIDs)
+
+        pendingGracefulTargets.subtract(stillRunningAfterGracefulStop)
+        pendingGracefulTargets.formIntersection(activeTargetIDs)
+        forceReadyTargets.formUnion(stillRunningAfterGracefulStop)
+        forceReadyTargets.formIntersection(activeTargetIDs)
     }
 
     private func startTimer() {
