@@ -467,15 +467,6 @@ private struct PortStatusRow: View {
                         .padding(.vertical, 4)
                         .background(AppPalette.insetBackground, in: Capsule())
                         .transition(.opacity)
-                } else {
-                    Text("\(processes.count)")
-                        .font(.caption.weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(AppPalette.runningColor)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(AppPalette.runningColor.opacity(0.14), in: Capsule())
-                        .transition(.scale.combined(with: .opacity))
                 }
             }
 
@@ -600,34 +591,37 @@ private struct ProcessRow: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 24, height: 24)
-                .background(AppPalette.insetBackground, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(title)
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-
-                    Spacer(minLength: 8)
-
-                    Text(trailing)
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-
-                Text(subtitle.isEmpty ? title : subtitle)
-                    .font(.caption2.monospaced())
+        ZStack(alignment: .topTrailing) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .truncationMode(.middle)
-                    .textSelection(.enabled)
+                    .frame(width: 24, height: 24)
+                    .background(AppPalette.insetBackground, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(title)
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+
+                        Text(trailing)
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+
+                        Spacer(minLength: 28)
+                    }
+
+                    Text(subtitle.isEmpty ? title : subtitle)
+                        .font(.caption2.monospaced())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                        .padding(.trailing, 28)
+                }
             }
 
             Button(action: actionMode == .force ? forceTerminate : terminate) {

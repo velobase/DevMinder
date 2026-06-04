@@ -12,9 +12,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var mainWindow: NSWindow?
     private var cancellables: Set<AnyCancellable> = []
     private let fullSize = NSSize(width: 540, height: 680)
+    private let mainWindowBehavior: NSWindow.CollectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
+    private let popoverWindowBehavior: NSWindow.CollectionBehavior = [.canJoinAllSpaces, .transient, .fullScreenAuxiliary]
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
+        NSApp.setActivationPolicy(.accessory)
         AppActions.showSettings = { [weak self] in
             self?.navigation.showSettings()
         }
@@ -22,11 +24,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         applyAppearance()
         setupStatusItem()
         bindMonitor()
-        showMainWindow()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        showMainWindow()
+        showStatusPopover()
         return true
     }
 
@@ -145,13 +146,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if popover.isShown {
             popover.performClose(sender)
         } else {
-            popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
+            showStatusPopover()
+        }
+    }
+
+    private func showStatusPopover() {
+        guard
+            let button = statusItem?.button,
+            let popover
+        else {
+            return
+        }
+
+        if !popover.isShown {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        }
+
+        if let window = popover.contentViewController?.view.window {
+            window.collectionBehavior = popoverWindowBehavior
+            window.makeKey()
         }
     }
 
     private func showMainWindow() {
         if let mainWindow {
+            mainWindow.collectionBehavior = mainWindowBehavior
+            if mainWindow.isMiniaturized {
+                mainWindow.deminiaturize(nil)
+            }
             mainWindow.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -165,6 +187,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         )
         window.title = monitor.t(.appName)
         window.contentMinSize = NSSize(width: 520, height: 560)
+        window.collectionBehavior = mainWindowBehavior
         window.contentViewController = NSHostingController(
             rootView: MenuView()
                 .environmentObject(monitor)
