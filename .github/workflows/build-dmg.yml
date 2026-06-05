@@ -1,0 +1,75 @@
+name: Build macOS DMG
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and package
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v* ]]; then
+            APP_VERSION="${GITHUB_REF_NAME#v}"
+            DMG_NAME="velobase-PM-${APP_VERSION}.dmg"
+            RELEASE_DMG_NAME="velobase-PM.dmg"
+          else
+            APP_VERSION="0.1.1"
+            SHORT_SHA="$(git rev-parse --short HEAD)"
+            SAFE_REF="${GITHUB_REF_NAME//\//-}"
+            DMG_NAME="velobase-PM-${SAFE_REF}-${SHORT_SHA}.dmg"
+            RELEASE_DMG_NAME=""
+          fi
+
+          echo "APP_VERSION=${APP_VERSION}" >> "$GITHUB_ENV"
+          echo "BUILD_NUMBER=${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
+          echo "DMG_NAME=${DMG_NAME}" >> "$GITHUB_ENV"
+          echo "RELEASE_DMG_NAME=${RELEASE_DMG_NAME}" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: swift build -c release
+
+      - name: Smoke test
+        run: swift run ProcessManagerCheck
+
+      - name: Package DMG
+        env:
+          APP_VERSION: ${{ env.APP_VERSION }}
+          BUILD_NUMBER: ${{ env.BUILD_NUMBER }}
+          DMG_NAME: ${{ env.DMG_NAME }}
+        run: ./scripts/build-dmg.sh
+
+      - name: Prepare latest download asset
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: cp "dist/${DMG_NAME}" "dist/${RELEASE_DMG_NAME}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DMG_NAME }}
+          path: dist/${{ env.DMG_NAME }}
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/${{ env.DMG_NAME }}
+            dist/${{ env.RELEASE_DMG_NAME }}

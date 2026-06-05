@@ -491,6 +491,7 @@ private struct PortStatusRow: View {
                             terminateLabel: process.isDockerContainer ? monitor.t(.stopContainer) : monitor.t(.sendTerm),
                             forceTerminateLabel: process.isDockerContainer ? monitor.t(.killContainer) : monitor.t(.forceKill),
                             disabledHelp: process.isProtectedSystemProcess ? monitor.t(.systemProcessProtected) : monitor.t(.dockerProxyProtected),
+                            showsSystemBadge: process.isProtectedSystemProcess,
                             terminate: { monitor.terminate(process.terminationTarget) },
                             forceTerminate: { monitor.terminate(process.terminationTarget, force: true) }
                         )
@@ -540,6 +541,7 @@ private struct RuleMatchRow: View {
             terminateLabel: monitor.t(.sendTerm),
             forceTerminateLabel: monitor.t(.forceKill),
             disabledHelp: monitor.t(.dockerProxyProtected),
+            showsSystemBadge: false,
             terminate: { monitor.terminate(target) },
             forceTerminate: { monitor.terminate(target, force: true) }
         )
@@ -563,6 +565,7 @@ private struct ProcessRow: View {
     let terminateLabel: String
     let forceTerminateLabel: String
     let disabledHelp: String
+    let showsSystemBadge: Bool
     let terminate: () -> Void
     let forceTerminate: () -> Void
 
@@ -635,17 +638,41 @@ private struct ProcessRow: View {
                 }
             }
 
-            Button(action: actionMode == .force ? forceTerminate : terminate) {
-                Image(systemName: buttonIcon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(buttonColor)
-                    .frame(width: 26, height: 26)
+            if showsSystemBadge {
+                SystemProcessBadge(text: monitor.t(.systemProcessBadge))
+                    .help(buttonHelp)
+            } else {
+                Button(action: actionMode == .force ? forceTerminate : terminate) {
+                    Image(systemName: buttonIcon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(buttonColor)
+                        .frame(width: 26, height: 26)
+                }
+                .buttonStyle(.plain)
+                .disabled(!canTerminate || actionMode == .waiting)
+                .opacity((canTerminate && actionMode != .waiting) ? 1 : 0.42)
+                .help(buttonHelp)
             }
-            .buttonStyle(.plain)
-            .disabled(!canTerminate || actionMode == .waiting)
-            .opacity((canTerminate && actionMode != .waiting) ? 1 : 0.42)
-            .help(buttonHelp)
         }
+    }
+}
+
+private struct SystemProcessBadge: View {
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: 10, weight: .semibold))
+
+            Text(text)
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+        }
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 7)
+        .frame(height: 24)
+        .background(AppPalette.insetBackground, in: Capsule())
     }
 }
 
