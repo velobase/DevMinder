@@ -5,7 +5,7 @@
 [![Latest release](https://img.shields.io/github/v/release/velobase/velobase-process-manager?label=release)](https://github.com/velobase/velobase-process-manager/releases/latest)
 [![Download DMG](https://img.shields.io/badge/download-DMG-2f6feb)](https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg)
 
-A lightweight macOS menu bar utility for finding forgotten development processes left behind by tools like Codex, Cursor, test runners, and local dev servers, then stopping them manually when you are ready.
+A tiny macOS menu bar app that helps you spot forgotten dev processes from Codex, Cursor, Next.js, Vite, test watchers, Docker containers, and other local tools before they quietly drain your Mac.
 
 [Download the latest DMG](https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg) ·
 [Releases](https://github.com/velobase/velobase-process-manager/releases) ·
@@ -13,16 +13,16 @@ A lightweight macOS menu bar utility for finding forgotten development processes
 
 ## Why
 
-AI-assisted development makes it easy to spin up projects, run tests, preview apps, and jump between tasks quickly. Tools like Codex and Cursor can help you move fast, but the local processes they start along the way are easy to forget: a Vite server still listening on `5173`, a Flask API on `5000`, a Redis or Postgres container, a test watcher, or some one-off command that never got cleaned up.
+When you are building with Codex, Cursor, or any fast AI coding workflow, it is easy to ask the tool to start a Next.js app, run a Vite preview, kick off tests, or bring up a Docker container. The work moves quickly. The cleanup does not always keep up.
 
-Most of the time you only notice later, when your Mac is warm, the battery is draining, or a familiar port is mysteriously already in use. The process has been sitting there all along, quietly consuming resources.
+A forgotten `next dev`, a Vite server on `5173`, a Flask API on `5000`, a test watcher, Redis, Postgres, or a mapped Docker container can sit in the background for hours. You usually notice only when your Mac feels warm, the battery drops faster than expected, or a familiar port is mysteriously already in use.
 
-DevMinder keeps an eye on the ports and process rules you care about, shows what it finds in the menu bar, and leaves every stop action under your control.
+DevMinder was made for that small but annoying moment. It lives in the menu bar, watches the development ports and process rules you care about, and lets you stop forgotten processes when you decide they should go.
 
 ## Features
 
 - Menu bar first: no Dock icon and no desktop window on launch.
-- Port monitoring: defaults cover common development ports for Next/React/Nuxt, Vite, Angular, Astro, Flask/API, Postgres, Redis, Storybook, Django/FastAPI, Spring/Tomcat/API, Wrangler, and more.
+- Port monitoring: defaults cover common development ports for Next.js/React/Nuxt, Vite, Angular, Astro, Flask/API, Postgres, Redis, Storybook, Django/FastAPI, Spring/Tomcat/API, Wrangler, and more.
 - Process rules: match global processes with plain keywords or `/regex/` patterns such as `vite`, `next dev`, `rails server`, or `uvicorn`.
 - Sleep mode: pause or resume monitoring from the menu bar.
 - Low overhead scanning: defaults to a 30-second interval and batches port checks to avoid repeatedly spawning heavy commands.
