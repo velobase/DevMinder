@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_NAME="velobase-PM"
+APP_NAME="DevMinder"
 APP_VERSION="${APP_VERSION:-0.1.1}"
 DMG_NAME="${DMG_NAME:-$APP_NAME-$APP_VERSION.dmg}"
 APP_DIR="$ROOT_DIR/dist/$APP_NAME.app"

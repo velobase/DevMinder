@@ -26,13 +26,13 @@ jobs:
         run: |
           if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v* ]]; then
             APP_VERSION="${GITHUB_REF_NAME#v}"
-            DMG_NAME="velobase-PM-${APP_VERSION}.dmg"
-            RELEASE_DMG_NAME="velobase-PM.dmg"
+            DMG_NAME="DevMinder-${APP_VERSION}.dmg"
+            RELEASE_DMG_NAME="DevMinder.dmg"
           else
             APP_VERSION="0.1.1"
             SHORT_SHA="$(git rev-parse --short HEAD)"
             SAFE_REF="${GITHUB_REF_NAME//\//-}"
-            DMG_NAME="velobase-PM-${SAFE_REF}-${SHORT_SHA}.dmg"
+            DMG_NAME="DevMinder-${SAFE_REF}-${SHORT_SHA}.dmg"
             RELEASE_DMG_NAME=""
           fi
 

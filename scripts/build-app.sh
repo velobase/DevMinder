@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_NAME="velobase-PM"
+APP_NAME="DevMinder"
 PRODUCT_NAME="ProcessManager"
 APP_VERSION="${APP_VERSION:-0.1.1}"
 BUILD_NUMBER="${BUILD_NUMBER:-${GITHUB_RUN_NUMBER:-2}}"
@@ -10,7 +10,7 @@ APP_DIR="$ROOT_DIR/dist/$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
-ICON_NAME="velobase-PM.icns"
+ICON_NAME="DevMinder.icns"
 BIN_PATH="$(swift build --package-path "$ROOT_DIR" -c release --show-bin-path)/$PRODUCT_NAME"
 
 swift build --package-path "$ROOT_DIR" -c release
@@ -32,7 +32,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<PLIST
   <key>CFBundleExecutable</key>
   <string>$APP_NAME</string>
   <key>CFBundleIdentifier</key>
-  <string>com.velobase.process-manager</string>
+  <string>com.velobase.devminder</string>
   <key>CFBundleIconFile</key>
   <string>$ICON_NAME</string>
   <key>CFBundleInfoDictionaryVersion</key>

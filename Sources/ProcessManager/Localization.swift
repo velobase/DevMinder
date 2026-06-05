@@ -119,7 +119,7 @@ enum L10n {
     }
 
     private static let zhHans: [L10nKey: String] = [
-        .appName: "velobase-PM",
+        .appName: "DevMinder",
         .portMonitoring: "端口监听",
         .activeRecognition: "主动识别",
         .pauseMonitoring: "暂停监测",
@@ -173,7 +173,7 @@ enum L10n {
     ]
 
     private static let english: [L10nKey: String] = [
-        .appName: "velobase-PM",
+        .appName: "DevMinder",
         .portMonitoring: "Port Watch",
         .activeRecognition: "Process Rules",
         .pauseMonitoring: "Pause monitoring",

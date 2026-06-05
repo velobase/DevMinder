@@ -1,21 +1,23 @@
-# velobase-PM
+# DevMinder
 
 [![GitHub stars](https://img.shields.io/github/stars/velobase/velobase-process-manager?style=social)](https://github.com/velobase/velobase-process-manager/stargazers)
 [![Build macOS DMG](https://github.com/velobase/velobase-process-manager/actions/workflows/build-dmg.yml/badge.svg)](https://github.com/velobase/velobase-process-manager/actions/workflows/build-dmg.yml)
 [![Latest release](https://img.shields.io/github/v/release/velobase/velobase-process-manager?label=release)](https://github.com/velobase/velobase-process-manager/releases/latest)
-[![Download DMG](https://img.shields.io/badge/download-DMG-2f6feb)](https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg)
+[![Download DMG](https://img.shields.io/badge/download-DMG-2f6feb)](https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg)
 
-A lightweight macOS menu bar utility for finding development processes left behind on common ports, recognizing matching commands globally, and stopping them manually when you are ready.
+A lightweight macOS menu bar utility for finding forgotten development processes left behind by tools like Codex, Cursor, test runners, and local dev servers, then stopping them manually when you are ready.
 
-[Download the latest DMG](https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg) ·
+[Download the latest DMG](https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg) ·
 [Releases](https://github.com/velobase/velobase-process-manager/releases) ·
 [Issues](https://github.com/velobase/velobase-process-manager/issues)
 
 ## Why
 
-Development servers have a habit of lingering in the background. Vite, Next.js, Flask, Redis, Postgres, Docker containers, and other local tools can keep listening on ports long after the terminal tab is gone.
+AI-assisted development makes it easy to spin up projects, run tests, preview apps, and jump between tasks quickly. Tools like Codex and Cursor can help you move fast, but the local processes they start along the way are easy to forget: a Vite server still listening on `5173`, a Flask API on `5000`, a Redis or Postgres container, a test watcher, or some one-off command that never got cleaned up.
 
-velobase-PM keeps an eye on the ports and process rules you care about, shows what it finds in the menu bar, and leaves every stop action under your control.
+Most of the time you only notice later, when your Mac is warm, the battery is draining, or a familiar port is mysteriously already in use. The process has been sitting there all along, quietly consuming resources.
+
+DevMinder keeps an eye on the ports and process rules you care about, shows what it finds in the menu bar, and leaves every stop action under your control.
 
 ## Features
 
@@ -32,8 +34,8 @@ velobase-PM keeps an eye on the ports and process rules you care about, shows wh
 
 ## Install
 
-1. Download [velobase-PM.dmg](https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg).
-2. Open the DMG and drag `velobase-PM.app` into `Applications`.
+1. Download [DevMinder.dmg](https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg).
+2. Open the DMG and drag `DevMinder.app` into `Applications`.
 3. Launch the app and look for the menu bar icon.
 
 This free distribution build is not notarized with an Apple Developer ID. If macOS says the developer cannot be verified, open **System Settings -> Privacy & Security** and choose **Open Anyway**. This keeps the project free to distribute, but it is not as smooth as a fully signed and notarized commercial build.
@@ -66,20 +68,20 @@ Build the `.app`:
 
 ```bash
 ./scripts/build-app.sh
-open dist/velobase-PM.app
+open dist/DevMinder.app
 ```
 
 Build the `.dmg`:
 
 ```bash
 ./scripts/build-dmg.sh
-open dist/velobase-PM-0.1.1.dmg
+open dist/DevMinder-0.1.1.dmg
 ```
 
 Override version metadata and the DMG name:
 
 ```bash
-APP_VERSION=0.1.2 BUILD_NUMBER=3 DMG_NAME=velobase-PM-0.1.2.dmg ./scripts/build-dmg.sh
+APP_VERSION=0.1.2 BUILD_NUMBER=3 DMG_NAME=DevMinder-0.1.2.dmg ./scripts/build-dmg.sh
 ```
 
 ## Automated Releases
@@ -99,13 +101,13 @@ git push origin v0.1.2
 
 Each release contains:
 
-- `velobase-PM-0.1.2.dmg`: versioned archive asset.
-- `velobase-PM.dmg`: stable filename for README and website download links.
+- `DevMinder-0.1.2.dmg`: versioned archive asset.
+- `DevMinder.dmg`: stable filename for README and website download links.
 
 Stable latest download URL:
 
 ```text
-https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg
+https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg
 ```
 
 ## Star History
