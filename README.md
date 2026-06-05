@@ -5,107 +5,118 @@
 [![Latest release](https://img.shields.io/github/v/release/velobase/velobase-process-manager?label=release)](https://github.com/velobase/velobase-process-manager/releases/latest)
 [![Download DMG](https://img.shields.io/badge/download-DMG-2f6feb)](https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg)
 
-一个轻量的 macOS 菜单栏小工具，用来发现开发时遗留的端口监听进程和指定命令进程，并在需要时手动终止它们。
+A lightweight macOS menu bar utility for finding development processes left behind on common ports, recognizing matching commands globally, and stopping them manually when you are ready.
 
-[下载最新版 DMG](https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg) ·
-[查看 Releases](https://github.com/velobase/velobase-process-manager/releases) ·
-[报告问题](https://github.com/velobase/velobase-process-manager/issues)
+[Download the latest DMG](https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg) ·
+[Releases](https://github.com/velobase/velobase-process-manager/releases) ·
+[Issues](https://github.com/velobase/velobase-process-manager/issues)
 
-## 为什么做它
+## Why
 
-开发项目时，Vite、Next、Flask、Redis、Postgres、Docker 容器这些进程偶尔会留在后台。等你再启动新项目时，端口被占用、进程忘记关、Docker 映射端口看起来像系统进程，都挺烦。
+Development servers have a habit of lingering in the background. Vite, Next.js, Flask, Redis, Postgres, Docker containers, and other local tools can keep listening on ports long after the terminal tab is gone.
 
-velobase-PM 做的事很简单：在菜单栏里安静地看着常用开发端口和你配置的进程规则，发现目标后展示出来，终止动作始终由你手动触发。
+velobase-PM keeps an eye on the ports and process rules you care about, shows what it finds in the menu bar, and leaves every stop action under your control.
 
-## 功能
+## Features
 
-- 菜单栏常驻：不占 Dock，不自动弹桌面窗口。
-- 端口监听：默认覆盖 Next/React/Nuxt、Vite、Angular、Astro、Flask/API、Postgres、Redis、Storybook、Django/FastAPI、Spring/Tomcat/API、Wrangler 等常用开发端口。
-- 主动识别：用关键词或 `/regex/` 规则匹配全局进程列表，适合识别 `vite`、`next dev`、`rails server`、`uvicorn` 等命令。
-- 手动休眠：一键暂停或恢复扫描，默认每 30 秒扫描一次。
-- 安全终止：默认发送 `TERM`，进程未退出时再提供 `KILL`。
-- Docker 适配：Docker Desktop 映射端口会解析到容器并执行 `docker stop` / `docker kill`，不会直接终止 Docker 后端进程。
-- 系统进程保护：Apple 系统进程会标记为系统进程，不提供终止按钮。
-- 空闲端口折叠：运行中的端口优先展示，空闲端口可折叠。
-- 国际化和外观：支持跟随系统、中文、English；支持跟随系统、浅色、深色。
+- Menu bar first: no Dock icon and no desktop window on launch.
+- Port monitoring: defaults cover common development ports for Next/React/Nuxt, Vite, Angular, Astro, Flask/API, Postgres, Redis, Storybook, Django/FastAPI, Spring/Tomcat/API, Wrangler, and more.
+- Process rules: match global processes with plain keywords or `/regex/` patterns such as `vite`, `next dev`, `rails server`, or `uvicorn`.
+- Sleep mode: pause or resume monitoring from the menu bar.
+- Low overhead scanning: defaults to a 30-second interval and batches port checks to avoid repeatedly spawning heavy commands.
+- Safe stopping flow: send `TERM` first, then offer `KILL` only if the process does not exit.
+- Docker-aware stopping: mapped Docker Desktop ports resolve to containers and use `docker stop` / `docker kill` instead of terminating Docker backend processes.
+- System process protection: Apple system processes are marked as protected and cannot be stopped from the app.
+- Collapsible idle ports: running ports stay visible while idle ports can stay tucked away.
+- Localization and appearance: follows system language and appearance, with Chinese/English and light/dark modes available in settings.
 
-## 安装
+## Install
 
-1. 下载 [velobase-PM.dmg](https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg)。
-2. 打开 DMG，把 `velobase-PM.app` 拖到 `Applications`。
-3. 启动后查看 macOS 菜单栏图标。
+1. Download [velobase-PM.dmg](https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg).
+2. Open the DMG and drag `velobase-PM.app` into `Applications`.
+3. Launch the app and look for the menu bar icon.
 
-当前免费分发版没有 Apple Developer ID 公证。如果 macOS 提示无法验证开发者，可以在 **系统设置 -> 隐私与安全性** 里选择 **仍要打开**。这不是最理想的分发体验，但可以避免为了开源小工具额外支付 Apple Developer Program 费用。
+This free distribution build is not notarized with an Apple Developer ID. If macOS says the developer cannot be verified, open **System Settings -> Privacy & Security** and choose **Open Anyway**. This keeps the project free to distribute, but it is not as smooth as a fully signed and notarized commercial build.
 
-## 使用
+## Usage
 
-- 点击菜单栏图标查看命中的端口进程和规则进程。
-- 点击刷新按钮立即扫描。
-- 点击暂停按钮进入休眠态，停止后台定时扫描。
-- 点击进程右上角的关闭按钮会先发送 `TERM`。
-- 如果进程没有退出，按钮会切换为强制停止。
-- Docker 容器会显示容器名，停止动作会作用在容器上。
-- Apple 系统进程会显示系统标识，不允许直接终止。
+- Click the menu bar icon to view matched port processes and rule matches.
+- Click refresh to scan immediately.
+- Click pause to enter sleep mode and stop the background timer.
+- Click the close button on a process row to send `TERM`.
+- If the process does not exit, the button changes to a force-stop action.
+- Docker rows show the resolved container name and stop the container directly.
+- Apple system processes show a protected system badge instead of a stop button.
 
-## 开发
+## Development
 
 ```bash
 swift run ProcessManager
 ```
 
-## 检查
+## Checks
 
 ```bash
 swift run ProcessManagerCheck
 ```
 
-## 本地打包
+## Local Packaging
 
-打包 `.app`：
+Build the `.app`:
 
 ```bash
 ./scripts/build-app.sh
 open dist/velobase-PM.app
 ```
 
-打包 `.dmg`：
+Build the `.dmg`:
 
 ```bash
 ./scripts/build-dmg.sh
 open dist/velobase-PM-0.1.1.dmg
 ```
 
-可以通过环境变量指定版本和文件名：
+Override version metadata and the DMG name:
 
 ```bash
 APP_VERSION=0.1.2 BUILD_NUMBER=3 DMG_NAME=velobase-PM-0.1.2.dmg ./scripts/build-dmg.sh
 ```
 
-## 自动发布
+## Automated Releases
 
-GitHub Actions 会在以下场景自动构建 DMG：
+GitHub Actions builds a DMG in these cases:
 
-- push 到 `main`：编译、检查、打包，并上传 Actions artifact。
-- pull request：编译、检查、打包 artifact。
-- push `v*` tag：创建 GitHub Release，并上传两个 DMG 附件。
+- Push to `main`: build, smoke test, package, and upload an Actions artifact.
+- Pull request: build, smoke test, package, and upload an Actions artifact.
+- Push a `v*` tag: create a GitHub Release and upload DMG assets.
 
-发布新版本：
+Create a release:
 
 ```bash
 git tag v0.1.2
 git push origin v0.1.2
 ```
 
-Release 会包含：
+Each release contains:
 
-- `velobase-PM-0.1.2.dmg`：带版本号的归档文件。
-- `velobase-PM.dmg`：固定文件名，用于 README 和网站的最新版下载链接。
+- `velobase-PM-0.1.2.dmg`: versioned archive asset.
+- `velobase-PM.dmg`: stable filename for README and website download links.
 
-稳定下载链接：
+Stable latest download URL:
 
 ```text
 https://github.com/velobase/velobase-process-manager/releases/latest/download/velobase-PM.dmg
 ```
+
+## Star History
+
+<a href="https://star-history.com/#velobase/velobase-process-manager&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=velobase/velobase-process-manager&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=velobase/velobase-process-manager&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=velobase/velobase-process-manager&type=Date" />
+  </picture>
+</a>
 
 ## License
 
