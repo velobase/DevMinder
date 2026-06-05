@@ -28,6 +28,7 @@ enum L10nKey: Hashable {
     case stopContainer
     case killContainer
     case dockerProxyProtected
+    case systemProcessProtected
     case terminateProcess
     case ready
     case scanning
@@ -138,6 +139,7 @@ enum L10n {
         .stopContainer: "停止容器",
         .killContainer: "强制停止容器",
         .dockerProxyProtected: "这是 Docker Desktop 端口代理，不能直接终止。",
+        .systemProcessProtected: "这是 Apple 系统进程，不能直接终止。",
         .terminateProcess: "终止进程",
         .ready: "准备就绪",
         .scanning: "扫描中",
@@ -190,6 +192,7 @@ enum L10n {
         .stopContainer: "Stop container",
         .killContainer: "Kill container",
         .dockerProxyProtected: "This is a Docker Desktop port proxy and cannot be terminated directly.",
+        .systemProcessProtected: "This is an Apple system process and cannot be terminated directly.",
         .terminateProcess: "Terminate process",
         .ready: "Ready",
         .scanning: "Scanning",

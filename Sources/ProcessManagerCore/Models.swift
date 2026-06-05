@@ -40,6 +40,7 @@ public enum ProcessTerminationTarget: Equatable, Hashable, Sendable {
     case process(pid: Int)
     case dockerContainer(id: String, name: String)
     case protectedDockerHost(pid: Int)
+    case protectedSystemProcess(pid: Int, name: String)
 
     public var id: String {
         switch self {
@@ -49,6 +50,8 @@ public enum ProcessTerminationTarget: Equatable, Hashable, Sendable {
             return "docker-\(id)"
         case .protectedDockerHost(let pid):
             return "docker-host-\(pid)"
+        case .protectedSystemProcess(let pid, _):
+            return "system-\(pid)"
         }
     }
 
@@ -61,12 +64,14 @@ public enum ProcessTerminationTarget: Equatable, Hashable, Sendable {
             return name.isEmpty ? "docker \(shortID)" : "docker \(name)"
         case .protectedDockerHost(let pid):
             return "docker proxy pid \(pid)"
+        case .protectedSystemProcess(let pid, let name):
+            return name.isEmpty ? "system pid \(pid)" : "\(name) pid \(pid)"
         }
     }
 
     public var canTerminate: Bool {
         switch self {
-        case .protectedDockerHost:
+        case .protectedDockerHost, .protectedSystemProcess:
             return false
         case .process, .dockerContainer:
             return true
@@ -75,6 +80,22 @@ public enum ProcessTerminationTarget: Equatable, Hashable, Sendable {
 
     public var isDockerContainer: Bool {
         if case .dockerContainer = self {
+            return true
+        }
+
+        return false
+    }
+
+    public var isProtectedSystemProcess: Bool {
+        if case .protectedSystemProcess = self {
+            return true
+        }
+
+        return false
+    }
+
+    public var isPlainProcess: Bool {
+        if case .process = self {
             return true
         }
 
@@ -139,6 +160,10 @@ public struct PortProcess: Equatable, Hashable, Identifiable, Sendable {
 
     public var isDockerContainer: Bool {
         terminationTarget.isDockerContainer
+    }
+
+    public var isProtectedSystemProcess: Bool {
+        terminationTarget.isProtectedSystemProcess
     }
 }
 

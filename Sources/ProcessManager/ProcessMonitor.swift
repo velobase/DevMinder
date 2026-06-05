@@ -32,6 +32,8 @@ final class ProcessMonitor: ObservableObject {
                 scanNow()
                 startTimer()
             } else {
+                timer?.invalidate()
+                timer = nil
                 setStatus(.sleeping)
             }
         }
@@ -150,8 +152,9 @@ final class ProcessMonitor: ObservableObject {
 
         scanTask?.cancel()
         scanTask = Task.detached(priority: .utility) {
-            let portProcesses = scanner.scanPorts(ports)
-            let ruleMatches = scanner.scanRules(rules)
+            let processSnapshots = scanner.listProcesses()
+            let portProcesses = scanner.scanPorts(ports, processSnapshots: processSnapshots)
+            let ruleMatches = scanner.scanRules(rules, processSnapshots: processSnapshots)
 
             await MainActor.run {
                 guard !Task.isCancelled else {
@@ -288,6 +291,7 @@ final class ProcessMonitor: ObservableObject {
                 self?.scanNow()
             }
         }
+        timer?.tolerance = min(scanInterval * 0.2, 5)
     }
 
     private func saveConfig() {

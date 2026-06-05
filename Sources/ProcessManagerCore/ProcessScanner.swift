@@ -4,6 +4,7 @@ public enum ProcessScannerError: Error, LocalizedError, Sendable {
     case commandFailed(command: String, status: Int32, stderr: String)
     case dockerCLIUnavailable
     case dockerHostProtected(pid: Int)
+    case systemProcessProtected(pid: Int)
 
     public var errorDescription: String? {
         switch self {
@@ -18,6 +19,8 @@ public enum ProcessScannerError: Error, LocalizedError, Sendable {
             return "Docker CLI was not found, so the mapped container could not be stopped."
         case .dockerHostProtected:
             return "This is a Docker Desktop port proxy. Stop the mapped container instead of killing Docker Desktop."
+        case .systemProcessProtected:
+            return "This is an Apple system process and cannot be terminated directly."
         }
     }
 }
@@ -29,17 +32,61 @@ public struct ProcessScanner: Sendable {
         self.runner = runner
     }
 
-    public func scanPorts(_ watches: [PortWatch]) -> [PortProcess] {
-        watches
-            .filter { $0.enabled }
-            .flatMap { watch in scanPort(watch.port) }
+    public func scanPorts(_ watches: [PortWatch], processSnapshots: [ProcessSnapshot]? = nil) -> [PortProcess] {
+        let watchedPorts = Set(watches.filter(\.enabled).map(\.port))
+
+        guard !watchedPorts.isEmpty else {
+            return []
+        }
+
+        guard let output = try? runner.run(
+            "/usr/sbin/lsof",
+            arguments: ["-nP", "-iTCP", "-sTCP:LISTEN", "-F", "pcLn"]
+        ).stdout else {
+            return []
+        }
+
+        let rawProcesses = Self.parseLsofFieldOutput(output, watchedPorts: watchedPorts)
+
+        guard !rawProcesses.isEmpty else {
+            return []
+        }
+
+        let commandLines = Dictionary(
+            uniqueKeysWithValues: (processSnapshots ?? listProcesses()).map { ($0.pid, $0.commandLine) }
+        )
+        let processes = rawProcesses.map { process in
+            let commandLine = commandLines[process.pid] ?? process.commandLine
+
+            guard !commandLine.isEmpty else {
+                return process
+            }
+
+            return PortProcess(
+                port: process.port,
+                pid: process.pid,
+                name: process.name,
+                user: process.user,
+                endpoint: process.endpoint,
+                commandLine: commandLine
+            )
+        }
+        let dockerContainers = processes.contains(where: isDockerHostProcess) ? dockerPublishedContainers() : []
+        let resolvedProcesses = Dictionary(grouping: processes, by: \.port)
+            .flatMap { port, processes in
+                dockerAwarePortProcesses(processes, port: port, containers: dockerContainers)
+            }
+
+        var seenIDs = Set<String>()
+        return systemAwarePortProcesses(resolvedProcesses)
+            .filter { seenIDs.insert($0.id).inserted }
             .sorted { lhs, rhs in
                 if lhs.port == rhs.port { return lhs.pid < rhs.pid }
                 return lhs.port < rhs.port
             }
     }
 
-    public func scanRules(_ rules: [ProcessRule]) -> [RuleProcessMatch] {
+    public func scanRules(_ rules: [ProcessRule], processSnapshots: [ProcessSnapshot]? = nil) -> [RuleProcessMatch] {
         let activeRules = rules.filter {
             $0.enabled && !$0.pattern.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
@@ -48,7 +95,7 @@ public struct ProcessScanner: Sendable {
             return []
         }
 
-        let processes = listProcesses().filter {
+        let processes = (processSnapshots ?? listProcesses()).filter {
             $0.pid != Int(ProcessInfo.processInfo.processIdentifier)
         }
 
@@ -80,6 +127,10 @@ public struct ProcessScanner: Sendable {
                 throw ProcessScannerError.dockerHostProtected(pid: pid)
             }
 
+            if isProtectedSystemProcess(pid: pid) {
+                throw ProcessScannerError.systemProcessProtected(pid: pid)
+            }
+
             let signal = force ? "-KILL" : "-TERM"
             _ = try runChecked("/bin/kill", arguments: [signal, "\(pid)"])
         case .dockerContainer(let id, _):
@@ -91,6 +142,8 @@ public struct ProcessScanner: Sendable {
             _ = try runChecked(docker, arguments: [action, id])
         case .protectedDockerHost(let pid):
             throw ProcessScannerError.dockerHostProtected(pid: pid)
+        case .protectedSystemProcess(let pid, _):
+            throw ProcessScannerError.systemProcessProtected(pid: pid)
         }
     }
 
@@ -118,7 +171,7 @@ public struct ProcessScanner: Sendable {
             )
         }
 
-        return dockerAwarePortProcesses(processes, port: port)
+        return systemAwarePortProcesses(dockerAwarePortProcesses(processes, port: port))
     }
 
     public func listProcesses() -> [ProcessSnapshot] {
@@ -143,7 +196,7 @@ public struct ProcessScanner: Sendable {
         return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    public static func parseDockerPublishedContainers(_ output: String, hostPort: Int) -> [DockerPublishedContainer] {
+    public static func parseDockerPublishedContainers(_ output: String) -> [DockerPublishedContainer] {
         output.split(whereSeparator: \.isNewline).compactMap { rawLine in
             let pieces = rawLine.split(separator: "\t", maxSplits: 2, omittingEmptySubsequences: false)
 
@@ -155,10 +208,7 @@ public struct ProcessScanner: Sendable {
             let name = String(pieces[1]).trimmingCharacters(in: .whitespacesAndNewlines)
             let ports = String(pieces[2]).trimmingCharacters(in: .whitespacesAndNewlines)
 
-            guard
-                !containerID.isEmpty,
-                dockerPorts(ports, publishHostPort: hostPort)
-            else {
+            guard !containerID.isEmpty else {
                 return nil
             }
 
@@ -166,9 +216,19 @@ public struct ProcessScanner: Sendable {
         }
     }
 
+    public static func parseDockerPublishedContainers(_ output: String, hostPort: Int) -> [DockerPublishedContainer] {
+        parseDockerPublishedContainers(output).filter {
+            dockerPorts($0.ports, publishHostPort: hostPort)
+        }
+    }
+
     public static func isProtectedDockerHostCommand(_ command: String) -> Bool {
         let normalized = command.lowercased()
         return dockerHostProcessMarkers.contains { normalized.contains($0) }
+    }
+
+    public static func isProtectedSystemProcessCommand(_ command: String) -> Bool {
+        protectedSystemProcessPathMarkers.contains { command.contains($0) }
     }
 
     public static func parseLsofFieldOutput(_ output: String, port: Int) -> [PortProcess] {
@@ -225,6 +285,69 @@ public struct ProcessScanner: Sendable {
         return results
     }
 
+    public static func parseLsofFieldOutput(_ output: String, watchedPorts: Set<Int>) -> [PortProcess] {
+        var results: [PortProcess] = []
+        var pid: Int?
+        var name = ""
+        var user: String?
+        var endpoints: [String] = []
+
+        func flush() {
+            guard let currentPid = pid else {
+                return
+            }
+
+            for endpoint in endpoints {
+                guard
+                    let port = listeningPort(in: endpoint),
+                    watchedPorts.contains(port)
+                else {
+                    continue
+                }
+
+                results.append(
+                    PortProcess(
+                        port: port,
+                        pid: currentPid,
+                        name: name.isEmpty ? "unknown" : name,
+                        user: user,
+                        endpoint: endpoint,
+                        commandLine: name
+                    )
+                )
+            }
+        }
+
+        for rawLine in output.split(whereSeparator: \.isNewline) {
+            let line = String(rawLine)
+            guard let marker = line.first else {
+                continue
+            }
+
+            let value = String(line.dropFirst())
+
+            switch marker {
+            case "p":
+                flush()
+                pid = Int(value)
+                name = ""
+                user = nil
+                endpoints = []
+            case "c":
+                name = value
+            case "L":
+                user = value
+            case "n":
+                endpoints.append(value)
+            default:
+                continue
+            }
+        }
+
+        flush()
+        return results
+    }
+
     public static func parseProcessList(_ output: String) -> [ProcessSnapshot] {
         output.split(whereSeparator: \.isNewline).compactMap { rawLine in
             let pieces = rawLine.split(separator: " ", maxSplits: 2, omittingEmptySubsequences: true)
@@ -266,14 +389,20 @@ public struct ProcessScanner: Sendable {
         return haystack.range(of: rawPattern, options: [.caseInsensitive, .diacriticInsensitive]) != nil
     }
 
-    private func dockerAwarePortProcesses(_ processes: [PortProcess], port: Int) -> [PortProcess] {
+    private func dockerAwarePortProcesses(
+        _ processes: [PortProcess],
+        port: Int,
+        containers allContainers: [DockerPublishedContainer]? = nil
+    ) -> [PortProcess] {
         let dockerHosts = processes.filter(isDockerHostProcess)
 
         guard !dockerHosts.isEmpty else {
             return processes
         }
 
-        let containers = dockerPublishedContainers(for: port)
+        let containers = (allContainers ?? dockerPublishedContainers()).filter {
+            Self.dockerPorts($0.ports, publishHostPort: port)
+        }
         let nonDockerProcesses = processes.filter { !isDockerHostProcess($0) }
 
         guard !containers.isEmpty else {
@@ -307,6 +436,12 @@ public struct ProcessScanner: Sendable {
     }
 
     private func dockerPublishedContainers(for port: Int) -> [DockerPublishedContainer] {
+        dockerPublishedContainers().filter {
+            Self.dockerPorts($0.ports, publishHostPort: port)
+        }
+    }
+
+    private func dockerPublishedContainers() -> [DockerPublishedContainer] {
         guard let docker = dockerExecutable() else {
             return []
         }
@@ -318,7 +453,7 @@ public struct ProcessScanner: Sendable {
             return []
         }
 
-        return Self.parseDockerPublishedContainers(result.stdout, hostPort: port)
+        return Self.parseDockerPublishedContainers(result.stdout)
     }
 
     private func dockerExecutable() -> String? {
@@ -357,6 +492,65 @@ public struct ProcessScanner: Sendable {
 
     private func isProtectedDockerHostProcess(pid: Int) -> Bool {
         Self.isProtectedDockerHostCommand(commandLine(for: pid))
+    }
+
+    private func systemAwarePortProcesses(_ processes: [PortProcess]) -> [PortProcess] {
+        processes.map { process in
+            guard process.terminationTarget.isPlainProcess, isProtectedSystemProcess(process) else {
+                return process
+            }
+
+            let displayName = Self.processDisplayName(commandLine: process.commandLine, fallback: process.name)
+            return PortProcess(
+                port: process.port,
+                pid: process.pid,
+                name: displayName,
+                user: process.user,
+                endpoint: process.endpoint,
+                commandLine: process.commandLine,
+                terminationTarget: .protectedSystemProcess(pid: process.pid, name: displayName)
+            )
+        }
+    }
+
+    private func isProtectedSystemProcess(_ process: PortProcess) -> Bool {
+        Self.isProtectedSystemProcessCommand(process.commandLine)
+    }
+
+    private func isProtectedSystemProcess(pid: Int) -> Bool {
+        Self.isProtectedSystemProcessCommand(commandLine(for: pid))
+    }
+
+    private static func processDisplayName(commandLine: String, fallback: String) -> String {
+        let executable = commandLine
+            .split(separator: " ", maxSplits: 1, omittingEmptySubsequences: true)
+            .first
+            .map(String.init) ?? ""
+
+        guard !executable.isEmpty else {
+            return fallback
+        }
+
+        let components = executable.split(separator: "/").map(String.init)
+        if let bundleName = components.first(where: { $0.hasSuffix(".app") }) {
+            return String(bundleName.dropLast(4))
+        }
+
+        return components.last ?? fallback
+    }
+
+    private static func listeningPort(in endpoint: String) -> Int? {
+        let firstToken = endpoint
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .split(separator: " ", maxSplits: 1)
+            .first
+            .map(String.init) ?? ""
+        let portToken = firstToken
+            .split(separator: ":")
+            .last
+            .map(String.init) ?? ""
+        let cleaned = portToken.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        return Int(cleaned)
     }
 
     private static func dockerPorts(_ ports: String, publishHostPort hostPort: Int) -> Bool {
@@ -408,5 +602,11 @@ public struct ProcessScanner: Sendable {
         "com.docker.hyperkit",
         "docker-proxy",
         "vpnkit"
+    ]
+
+    private static let protectedSystemProcessPathMarkers = [
+        "/System/Library/",
+        "/System/Applications/",
+        "/usr/libexec/"
     ]
 }

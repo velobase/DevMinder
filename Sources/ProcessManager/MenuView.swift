@@ -370,15 +370,21 @@ private struct MetricChip: View {
 private struct ScanningGlyph: View {
     let active: Bool
 
+    @ViewBuilder
     var body: some View {
-        TimelineView(.animation) { timeline in
-            let rotation = active ? timeline.date.timeIntervalSinceReferenceDate * 220 : 0
+        if active {
+            TimelineView(.animation) { timeline in
+                let rotation = timeline.date.timeIntervalSinceReferenceDate * 220
 
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .rotationEffect(.degrees(rotation))
+                    .animation(nil, value: rotation)
+            }
+            .frame(width: 16, height: 16)
+        } else {
             Image(systemName: "arrow.triangle.2.circlepath")
-                .rotationEffect(.degrees(rotation))
-                .animation(nil, value: rotation)
+                .frame(width: 16, height: 16)
         }
-        .frame(width: 16, height: 16)
     }
 }
 
@@ -477,11 +483,14 @@ private struct PortStatusRow: View {
                             title: process.name,
                             subtitle: process.commandLine,
                             trailing: process.displayTarget,
-                            systemImage: process.isDockerContainer ? "shippingbox.fill" : "terminal",
+                            systemImage: process.isDockerContainer
+                                ? "shippingbox.fill"
+                                : (process.isProtectedSystemProcess ? "gearshape.2.fill" : "terminal"),
                             canTerminate: process.canTerminate,
                             actionMode: monitor.terminationButtonMode(for: process.terminationTarget),
                             terminateLabel: process.isDockerContainer ? monitor.t(.stopContainer) : monitor.t(.sendTerm),
                             forceTerminateLabel: process.isDockerContainer ? monitor.t(.killContainer) : monitor.t(.forceKill),
+                            disabledHelp: process.isProtectedSystemProcess ? monitor.t(.systemProcessProtected) : monitor.t(.dockerProxyProtected),
                             terminate: { monitor.terminate(process.terminationTarget) },
                             forceTerminate: { monitor.terminate(process.terminationTarget, force: true) }
                         )
@@ -530,6 +539,7 @@ private struct RuleMatchRow: View {
             actionMode: monitor.terminationButtonMode(for: target),
             terminateLabel: monitor.t(.sendTerm),
             forceTerminateLabel: monitor.t(.forceKill),
+            disabledHelp: monitor.t(.dockerProxyProtected),
             terminate: { monitor.terminate(target) },
             forceTerminate: { monitor.terminate(target, force: true) }
         )
@@ -552,6 +562,7 @@ private struct ProcessRow: View {
     let actionMode: ProcessTerminationButtonMode
     let terminateLabel: String
     let forceTerminateLabel: String
+    let disabledHelp: String
     let terminate: () -> Void
     let forceTerminate: () -> Void
 
@@ -568,7 +579,7 @@ private struct ProcessRow: View {
 
     private var buttonHelp: String {
         guard canTerminate else {
-            return monitor.t(.dockerProxyProtected)
+            return disabledHelp
         }
 
         switch actionMode {

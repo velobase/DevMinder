@@ -26,6 +26,29 @@ expect(portResults[0].pid == 12_345, "first lsof pid should parse")
 expect(portResults[0].name == "node", "first lsof command should parse")
 expect(portResults[1].endpoint == "127.0.0.1:8000", "second endpoint should parse")
 
+let allPortsLsofOutput = """
+p11111
+cnode
+Lxxc
+n*:3000
+p22222
+ccom.docker.backend
+Lxxc
+n[::]:6379
+p33333
+cruby
+Lxxc
+n127.0.0.1:4567
+"""
+
+let watchedPortResults = ProcessScanner.parseLsofFieldOutput(
+    allPortsLsofOutput,
+    watchedPorts: [3000, 6379]
+)
+expect(watchedPortResults.count == 2, "batched lsof parser should only return watched ports")
+expect(watchedPortResults[0].port == 3000, "batched lsof parser should parse wildcard host port")
+expect(watchedPortResults[1].port == 6379, "batched lsof parser should parse IPv6 host port")
+
 let dockerPsOutput = """
 abc123def456\tweb\t0.0.0.0:3000->3000/tcp, :::3000->3000/tcp
 def456abc123\tdb\t127.0.0.1:5432->5432/tcp
@@ -36,6 +59,10 @@ aaaaabbbbbcc\tinternal\t80/tcp
 let dockerWeb = ProcessScanner.parseDockerPublishedContainers(dockerPsOutput, hostPort: 3000)
 expect(dockerWeb.count == 1, "docker parser should find published host port")
 expect(dockerWeb[0].name == "web", "docker parser should preserve container name")
+expect(
+    ProcessScanner.parseDockerPublishedContainers(dockerPsOutput).count == 4,
+    "docker parser should parse all containers once"
+)
 
 let dockerRange = ProcessScanner.parseDockerPublishedContainers(dockerPsOutput, hostPort: 8001)
 expect(dockerRange.count == 1, "docker parser should support published port ranges")
@@ -44,6 +71,14 @@ expect(dockerRange[0].name == "api", "docker range parser should return matching
 expect(
     ProcessScanner.isProtectedDockerHostCommand("/Applications/Docker.app/Contents/MacOS/com.docker.backend"),
     "docker backend should be recognized as protected"
+)
+expect(
+    ProcessScanner.isProtectedSystemProcessCommand("/System/Library/CoreServices/ControlCenter.app/Contents/MacOS/ControlCenter"),
+    "Control Center should be recognized as a protected system process"
+)
+expect(
+    !ProcessScanner.isProtectedSystemProcessCommand("/opt/homebrew/bin/flask --app server run --port 5000"),
+    "user development processes on port 5000 should remain terminable"
 )
 
 let psOutput = """
