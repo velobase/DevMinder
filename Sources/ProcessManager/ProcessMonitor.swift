@@ -84,9 +84,7 @@ final class ProcessMonitor: ObservableObject {
     }
 
     var activeCount: Int {
-        let portTargets = portProcesses.map { $0.terminationTarget.id }
-        let ruleTargets = ruleMatches.map { "pid-\($0.process.pid)" }
-        return Set(portTargets + ruleTargets).count
+        Set(countablePortTargetIDs + countableRuleTargetIDs).count
     }
 
     var statusSymbol: String {
@@ -262,6 +260,22 @@ final class ProcessMonitor: ObservableObject {
 
     func processes(for port: Int) -> [PortProcess] {
         portProcesses.filter { $0.port == port }
+    }
+
+    private var countablePortTargetIDs: [String] {
+        portProcesses
+            .filter { !$0.isProtectedSystemProcess }
+            .map(\.terminationTarget.id)
+    }
+
+    private var countableRuleTargetIDs: [String] {
+        ruleMatches
+            .filter { match in
+                !ProcessScanner.isProtectedSystemProcessCommand(
+                    "\(match.process.executable) \(match.process.commandLine)"
+                )
+            }
+            .map { "pid-\($0.process.pid)" }
     }
 
     private func reconcileTerminationButtons(
