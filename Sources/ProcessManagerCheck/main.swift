@@ -126,6 +126,10 @@ expect(AppConfig.defaultPorts.map(\.port).contains(4200), "default ports should 
 expect(AppConfig.defaultPorts.map(\.port).contains(4321), "default ports should include Astro")
 expect(AppConfig.defaultPorts.map(\.port).contains(6006), "default ports should include Storybook")
 expect(
+    AppConfig.defaultPorts.allSatisfy { $0.label.range(of: "\\p{Han}", options: .regularExpression) == nil },
+    "default port labels should be English"
+)
+expect(
     AppConfig.defaultRules.contains { $0.pattern == "react-scripts start" },
     "default rules should include Create React App"
 )

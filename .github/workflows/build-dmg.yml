@@ -29,7 +29,7 @@ jobs:
             DMG_NAME="DevMinder-${APP_VERSION}.dmg"
             RELEASE_DMG_NAME="DevMinder.dmg"
           else
-            APP_VERSION="0.1.1"
+            APP_VERSION="0.1.2"
             SHORT_SHA="$(git rev-parse --short HEAD)"
             SAFE_REF="${GITHUB_REF_NAME//\//-}"
             DMG_NAME="DevMinder-${SAFE_REF}-${SHORT_SHA}.dmg"

@@ -75,7 +75,7 @@ Build the `.dmg`:
 
 ```bash
 ./scripts/build-dmg.sh
-open dist/DevMinder-0.1.1.dmg
+open dist/DevMinder-0.1.2.dmg
 ```
 
 Override version metadata and the DMG name:

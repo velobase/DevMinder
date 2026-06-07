@@ -270,14 +270,14 @@ public struct AppConfig: Codable, Equatable, Sendable {
 
     public static let defaultPorts: [PortWatch] = [
         PortWatch(port: 3000, label: "Next/React/Nuxt"),
-        PortWatch(port: 3001, label: "Web 备用"),
-        PortWatch(port: 3002, label: "Web 备用 2"),
+        PortWatch(port: 3001, label: "Web Alt"),
+        PortWatch(port: 3002, label: "Web Alt 2"),
         PortWatch(port: 4173, label: "Vite Preview"),
         PortWatch(port: 4200, label: "Angular"),
         PortWatch(port: 4321, label: "Astro"),
         PortWatch(port: 5000, label: "Flask/API"),
         PortWatch(port: 5173, label: "Vite"),
-        PortWatch(port: 5174, label: "Vite 备用"),
+        PortWatch(port: 5174, label: "Vite Alt"),
         PortWatch(port: 5432, label: "Postgres"),
         PortWatch(port: 6006, label: "Storybook"),
         PortWatch(port: 6379, label: "Redis"),

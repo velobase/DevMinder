@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="DevMinder"
 PRODUCT_NAME="ProcessManager"
-APP_VERSION="${APP_VERSION:-0.1.1}"
+APP_VERSION="${APP_VERSION:-0.1.2}"
 BUILD_NUMBER="${BUILD_NUMBER:-${GITHUB_RUN_NUMBER:-2}}"
 APP_DIR="$ROOT_DIR/dist/$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
