@@ -1,15 +1,15 @@
 # DevMinder
 
-[![GitHub stars](https://img.shields.io/github/stars/velobase/velobase-process-manager?style=social)](https://github.com/velobase/velobase-process-manager/stargazers)
-[![Build macOS DMG](https://github.com/velobase/velobase-process-manager/actions/workflows/build-dmg.yml/badge.svg)](https://github.com/velobase/velobase-process-manager/actions/workflows/build-dmg.yml)
-[![Latest release](https://img.shields.io/github/v/release/velobase/velobase-process-manager?label=release)](https://github.com/velobase/velobase-process-manager/releases/latest)
-[![Download DMG](https://img.shields.io/badge/download-DMG-2f6feb)](https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg)
+[![GitHub stars](https://img.shields.io/github/stars/velobase/DevMinder?style=social)](https://github.com/velobase/DevMinder/stargazers)
+[![Build macOS DMG](https://github.com/velobase/DevMinder/actions/workflows/build-dmg.yml/badge.svg)](https://github.com/velobase/DevMinder/actions/workflows/build-dmg.yml)
+[![Latest release](https://img.shields.io/github/v/release/velobase/DevMinder?label=release)](https://github.com/velobase/DevMinder/releases/latest)
+[![Download DMG](https://img.shields.io/badge/download-DMG-2f6feb)](https://github.com/velobase/DevMinder/releases/latest/download/DevMinder.dmg)
 
 A tiny macOS menu bar app that helps you spot forgotten dev processes from Codex, Cursor, Next.js, Vite, test watchers, Docker containers, and other local tools before they quietly drain your Mac.
 
-[Download the latest DMG](https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg) ·
-[Releases](https://github.com/velobase/velobase-process-manager/releases) ·
-[Issues](https://github.com/velobase/velobase-process-manager/issues)
+[Download the latest DMG](https://github.com/velobase/DevMinder/releases/latest/download/DevMinder.dmg) ·
+[Releases](https://github.com/velobase/DevMinder/releases) ·
+[Issues](https://github.com/velobase/DevMinder/issues)
 
 ## Why
 
@@ -34,7 +34,7 @@ DevMinder was made for that small but annoying moment. It lives in the menu bar,
 
 ## Install
 
-1. Download [DevMinder.dmg](https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg).
+1. Download [DevMinder.dmg](https://github.com/velobase/DevMinder/releases/latest/download/DevMinder.dmg).
 2. Open the DMG and drag `DevMinder.app` into `Applications`.
 3. Launch the app and look for the menu bar icon.
 
@@ -107,16 +107,16 @@ Each release contains:
 Stable latest download URL:
 
 ```text
-https://github.com/velobase/velobase-process-manager/releases/latest/download/DevMinder.dmg
+https://github.com/velobase/DevMinder/releases/latest/download/DevMinder.dmg
 ```
 
 ## Star History
 
-<a href="https://star-history.com/#velobase/velobase-process-manager&Date">
+<a href="https://star-history.com/#velobase/DevMinder&Date">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=velobase/velobase-process-manager&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=velobase/velobase-process-manager&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=velobase/velobase-process-manager&type=Date" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=velobase/DevMinder&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=velobase/DevMinder&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=velobase/DevMinder&type=Date" />
   </picture>
 </a>
 
